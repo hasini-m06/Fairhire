@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FairHire — AI Bias Auditor</title>
+  <link rel="stylesheet" href="src/style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,500;1,300&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <div class="logo-icon">⚖</div>
+        <div class="logo-text">Fair<span>Hire</span></div>
+      </div>
+      <p class="tagline">// AI-powered hiring bias auditor &middot; Solution Challenge 2026</p>
+    </header>
+
+    <!-- Step 1: Upload -->
+    <section class="card" id="section-upload">
+      <p class="slabel">01 — Upload candidate data</p>
+      <div class="upload-zone" id="uploadZone">
+        <input type="file" accept=".csv" id="fileInput" />
+        <div class="upload-icon">📂</div>
+        <p class="upload-title" id="uploadTitle">Drop CSV here or click to browse</p>
+        <p class="upload-sub" id="uploadSub">Columns: name, gender, college_tier, location, hired</p>
+      </div>
+      <div class="demo-row">
+        <span class="demo-hint">No data? Use the demo dataset</span>
+        <button class="demo-btn" id="demoBtn">Load demo CSV ↗</button>
+      </div>
+    </section>
+
+    <!-- Step 2: Preview -->
+    <section class="card" id="previewCard" style="display:none">
+      <div class="preview-header">
+        <p class="slabel" style="margin-bottom:0">02 — Data preview</p>
+        <div id="colTags"></div>
+      </div>
+      <div class="table-scroll">
+        <table class="preview-table" id="previewTable"></table>
+      </div>
+    </section>
+
+    <!-- Step 3: Analyze -->
+    <section class="card" id="section-analyze">
+      <p class="slabel">03 — Run audit</p>
+      <button class="analyze-btn" id="analyzeBtn" disabled>Analyze for bias →</button>
+    </section>
+
+    <!-- Results -->
+    <div id="resultsArea" style="display:none">
+      <div id="riskBannerEl"></div>
+      <div class="card">
+        <div class="tabs" id="tabsEl">
+          <button class="tab active" data-tab="findings">Bias findings</button>
+          <button class="tab" data-tab="correlations">Correlations</button>
+          <button class="tab" data-tab="recs">Recommendations</button>
+          <button class="tab" data-tab="raw">Full analysis</button>
+        </div>
+        <div id="tab-findings"></div>
+        <div id="tab-correlations" style="display:none"></div>
+        <div id="tab-recs" style="display:none"></div>
+        <div id="tab-raw" style="display:none"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="src/data.js"></script>
+  <script src="src/api.js"></script>
+  <script src="src/render.js"></script>
+  <script src="src/main.js"></script>
+</body>
+</html>

@@ -1,38 +1,60 @@
-// ── Gemini Audit Prompts (Steps A, B, C from the guide) ────
+// ── FairHire Audit Engine ─────────────────────────────────
 //
-//  Prompt A  →  bias detection + correlation analysis
-//  Prompt B  →  fairness risk label + findings
-//  Prompt C  →  actionable recommendations
+//  Three-stage audit matching the 6-step guide:
 //
-//  All three are combined into one structured API call so Gemini
-//  returns a single JSON object the UI can render directly.
+//  Prompt A  →  Bias Detection (patterns in data)
+//  Prompt B  →  Fairness Label (risk level + findings)
+//  Prompt C  →  Recommendations (concrete HR actions)
+//
+//  All three are composed into one structured call so Gemini
+//  returns a single JSON object the UI renders directly.
 
-async function runGeminiAudit(csvText) {
+async function runAudit(csvText) {
   const { headers, rows } = parseCSV(csvText);
 
-  // Limit to 15 rows for the API call (enough to detect patterns)
-  const sample = rows.slice(0, 15);
-  const sampleText = [
+  // Use up to 20 rows — enough to detect patterns without token bloat
+  const sample = rows.slice(0, 20);
+  const sampleCSV = [
     headers.join(','),
     ...sample.map(r => headers.map(h => r[h]).join(','))
   ].join('\n');
 
-  // ── PROMPT A: Bias Detection ──────────────────────────────
-  const promptA = `You are a hiring fairness auditor. Analyze this candidate dataset for systemic bias.
+  // ── Prompt A: Bias Detection ──────────────────────────────
+  // Identifies which features correlate with rejection outcomes
+  const promptA = `
+You are a senior hiring fairness researcher specializing in Indian tech company bias.
+Analyze this candidate dataset for systemic discrimination patterns.
 
-Dataset:
-${sampleText}
+Dataset (${sample.length} candidates):
+${sampleCSV}
 
-Focus on: gender bias, college tier bias, geographic bias, and how these features
-correlate with hiring outcomes (the "hired" column).`;
+Pay close attention to:
+1. Gender × hired outcome correlation
+2. college_tier × hired outcome (Tier 1 = IIT/IISc/NIT, Tier 2 = state colleges, Tier 3 = private/lesser-known)
+3. location bias (metros like Bangalore/Mumbai/Delhi vs smaller cities)
+4. Whether years_exp actually predicts hiring or if protected characteristics override it
+`;
 
-  // ── PROMPT B: Fairness Label ──────────────────────────────
-  const promptB = `Based on your analysis, assign a Fairness Risk Level: LOW / MEDIUM / HIGH.
-Identify the top 3 bias findings in plain English that a non-technical HR manager can act on.`;
+  // ── Prompt B: Fairness Label ──────────────────────────────
+  // Produces a structured risk assessment with named bias patterns
+  const promptB = `
+Based on the analysis above, generate a Fairness Risk Level (LOW / MEDIUM / HIGH).
+Identify the 3 most critical bias patterns in plain English that a non-technical HR manager
+in an Indian company would immediately understand and recognize.
 
-  // ── PROMPT C: Recommendations ────────────────────────────
-  const promptC = `Suggest 3 concrete, actionable changes this company can make to reduce the bias found.
-Each recommendation must include a specific implementation step.`;
+Each finding must name the specific bias pattern (e.g. "Prestige Trap", "Metro Privilege"),
+explain what data supports it, and state the real-world harm it causes.
+`;
+
+  // ── Prompt C: Recommendations ────────────────────────────
+  // Concrete, India-specific HR interventions
+  const promptC = `
+Recommend 3 concrete interventions this company can implement within 30 days.
+Each must be:
+- Specific to the Indian hiring context
+- Actionable by an HR team without technical resources
+- Tied directly to one of the bias patterns identified above
+`;
 
   // ── Combined structured prompt ────────────────────────────
   const fullPrompt = `${promptA}
@@ -41,28 +63,41 @@ ${promptB}
 
 ${promptC}
 
-Respond ONLY with a valid JSON object. No markdown, no backticks, no extra text.
-Use exactly this structure:
+Respond ONLY with a valid JSON object. No markdown fences, no preamble, no trailing text.
+Follow this exact schema:
+
 {
   "risk_level": "HIGH",
-  "risk_summary": "One sentence summary of the biggest fairness risk",
+  "risk_summary": "One sentence describing the single biggest fairness risk in this dataset",
   "findings": [
-    { "title": "short bias name", "detail": "plain English explanation", "risk": "HIGH" },
+    {
+      "title": "Pattern name (e.g. Prestige Trap)",
+      "detail": "2-3 sentences explaining the pattern and its real-world harm",
+      "risk": "HIGH"
+    },
     { "title": "...", "detail": "...", "risk": "MEDIUM" },
     { "title": "...", "detail": "...", "risk": "LOW" }
   ],
   "correlations": [
-    { "feature": "column name", "strength": "High", "observation": "pattern found" },
+    {
+      "feature": "column name",
+      "strength": "VeryHigh",
+      "observation": "specific pattern observed in the data"
+    },
+    { "feature": "...", "strength": "High", "observation": "..." },
     { "feature": "...", "strength": "Medium", "observation": "..." },
-    { "feature": "...", "strength": "Variable", "observation": "..." },
-    { "feature": "...", "strength": "VeryHigh", "observation": "..." }
+    { "feature": "...", "strength": "Variable", "observation": "..." }
   ],
   "recommendations": [
-    { "title": "action name", "body": "why this helps", "action": "specific step to take" },
+    {
+      "title": "Action name",
+      "body": "Why this intervention addresses the bias found",
+      "action": "Specific implementation step the HR team takes this week"
+    },
     { "title": "...", "body": "...", "action": "..." },
     { "title": "...", "body": "...", "action": "..." }
   ],
-  "raw_analysis": "2-3 paragraphs of detailed technical analysis of the patterns found"
+  "raw_analysis": "3 paragraphs of detailed technical analysis covering statistical patterns, root causes, and systemic risks"
 }`;
 
   const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -70,17 +105,24 @@ Use exactly this structure:
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 1200,
+      max_tokens: 1500,
       messages: [{ role: 'user', content: fullPrompt }]
     })
   });
 
   if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
+    const err = await response.text();
+    throw new Error(`API ${response.status}: ${err}`);
   }
 
   const data = await response.json();
-  const text = data.content.map(block => block.text || '').join('');
-  const clean = text.replace(/```json|```/g, '').trim();
-  return JSON.parse(clean);
+  const rawText = data.content.map(b => b.text || '').join('');
+  const clean = rawText.replace(/```json\s*|```\s*/g, '').trim();
+
+  try {
+    return JSON.parse(clean);
+  } catch (e) {
+    console.error('Failed to parse API response:', clean);
+    throw new Error('Could not parse Gemini response. Check console.');
+  }
 }

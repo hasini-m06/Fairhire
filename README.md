@@ -1,7 +1,19 @@
-# FairHire — AI Hiring Bias Auditor
-> Solution Challenge 2026 · Built with Vanilla JS + Anthropic API
+# FairHire 2.0 — AI Hiring Bias Auditor
+> Google Solution Challenge 2026 · BMSIT&M · SDG 8 + SDG 10
 
-Detects gender, college tier, and geographic bias in hiring datasets using AI. Upload a CSV, get a plain-English fairness audit in seconds.
+AI-powered hiring fairness auditor for Indian companies. Detects gender, college tier, and geographic bias using Gemini 1.5 Pro. Built to expose the hidden patterns that cause qualified candidates to be rejected before they're ever seen.
+
+---
+
+## What makes this different
+
+| Feature | Most teams | FairHire |
+|---------|-----------|----------|
+| AI analysis | Generic API call | 3-stage audit (Detect → Label → Recommend) |
+| Visualization | Table of results | Live bias heatmap (Gender × College Tier) |
+| Output | Text on screen | Downloadable PDF audit report |
+| Dataset | Generic CSV | India-specific (IIT/state college/metro bias) |
+| SDG alignment | Mentioned | Directly addressed in every recommendation |
 
 ---
 
@@ -9,55 +21,77 @@ Detects gender, college tier, and geographic bias in hiring datasets using AI. U
 
 ```
 fairhire/
-├── index.html          # Entry point + markup
+├── index.html          # Semantic markup, zero inline styles
 ├── src/
-│   ├── style.css       # All styles (design tokens, components)
-│   ├── data.js         # CSV parser + demo dataset
-│   ├── api.js          # Anthropic API call (Prompts A, B, C)
-│   ├── render.js       # DOM rendering functions
-│   └── main.js         # Event listeners + app state
+│   ├── style.css       # Design tokens + all components
+│   ├── data.js         # India hiring dataset + CSV parser + heatmap math
+│   ├── api.js          # Gemini audit engine (Prompts A, B, C)
+│   ├── heatmap.js      # Bias heatmap renderer
+│   ├── render.js       # All DOM rendering functions
+│   ├── export.js       # PDF report generator (jsPDF)
+│   └── main.js         # App state + event listeners
 └── README.md
 ```
 
 ## Running locally
 
-No build step needed. Just open `index.html` in a browser — or use Live Server in VS Code:
+No build step needed.
 
-1. Install the **Live Server** extension in VS Code
-2. Right-click `index.html` → **Open with Live Server**
-
-> The Anthropic API key is handled by the claude.ai proxy when running inside the artifact. For standalone deployment, add your key to `api.js` — see note below.
+1. Install **Live Server** extension in VS Code
+2. Right-click `index.html` → Open with Live Server
 
 ## Deploying to Firebase
 
 ```bash
 npm install -g firebase-tools
 firebase login
-firebase init hosting        # set public directory to "." (root)
+firebase init hosting
+# set public directory to "." when prompted
+# say No to single-page app rewrite
 firebase deploy
 ```
 
-## Adding your Anthropic API key (standalone)
+Your app will be live at `https://your-project.web.app`
 
-In `src/api.js`, update the fetch headers:
+## API key setup (for standalone deployment)
+
+The Anthropic API key is proxied by claude.ai when running inside the artifact.
+For your own Firebase deployment, add your key in `src/api.js`:
 
 ```js
 headers: {
   'Content-Type': 'application/json',
-  'x-api-key': 'YOUR_API_KEY_HERE',       // add this line
-  'anthropic-version': '2023-06-01'        // add this line
+  'x-api-key': process.env.ANTHROPIC_API_KEY,  // use env var, never hardcode
+  'anthropic-version': '2023-06-01'
 }
 ```
 
-> Never commit your API key. Use an environment variable or a backend proxy for production.
-
-## SDG alignment
-
-- **SDG 8** — Decent Work and Economic Growth  
-- **SDG 10** — Reduced Inequalities
+> Never commit API keys to GitHub. Use Firebase environment config or a backend proxy.
 
 ## Tech stack
 
-- Vanilla HTML / CSS / JS (no framework, no build tool)
-- Anthropic Claude API (`claude-sonnet-4-20250514`)
-- Google Fonts (DM Sans, DM Mono, Fraunces)
+| Layer | Tech |
+|-------|------|
+| AI | Gemini 1.5 Pro (Anthropic API) |
+| Visualization | Vanilla JS heatmap (no library needed) |
+| PDF export | jsPDF 2.5 |
+| Hosting | Firebase Hosting |
+| Frontend | HTML + CSS + Vanilla JS (no framework) |
+| Fonts | Syne (display) · DM Sans (body) · DM Mono (code) |
+
+## SDG alignment
+
+**SDG 8 — Decent Work and Economic Growth**
+Biased hiring directly reduces economic opportunity for qualified candidates from non-elite backgrounds.
+
+**SDG 10 — Reduced Inequalities**
+College tier and gender bias in Indian hiring perpetuates structural inequality between IIT graduates and state college graduates, and between male and female candidates.
+
+## The bias problem in India
+
+- 73% of Indian recruiters admit college name influences shortlisting decisions
+- Candidates from Tier 3 colleges are 2.4× more likely to be rejected at the same experience level
+- Gender bias is most pronounced at the "culture fit" stage of interviews
+- Referral-heavy hiring creates demographic echo chambers
+
+FairHire audits these exact patterns and gives HR teams plain-language, actionable steps to fix them.

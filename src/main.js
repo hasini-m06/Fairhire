@@ -111,7 +111,7 @@ tabsEl.addEventListener('click', e => {
   tabsEl.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
 
-  ['findings', 'heatmap', 'correlations', 'recs', 'analysis'].forEach(name => {
+  ['findings', 'heatmap', 'correlations', 'recs', 'analysis', 'validation'].forEach(name => {
     const el = document.getElementById(`tab-${name}`);
     if (el) el.style.display = name === tabName ? 'block' : 'none';
   });

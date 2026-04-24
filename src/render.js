@@ -82,15 +82,109 @@ function renderAnalysis(text) {
   document.getElementById('tab-analysis').innerHTML = `<p class="raw-text">${text}</p>`;
 }
 
+function renderValidation(validation, aiResult) {
+  const { comparisons, trustScore, matchCount, total } = validation;
+
+  const trustColor = trustScore >= 80 ? 'var(--green)'
+    : trustScore >= 50 ? 'var(--amber)' : 'var(--red)';
+
+  const trustLabel = trustScore >= 80 ? 'AI findings confirmed by statistics'
+    : trustScore >= 50 ? 'Partial confirmation — review AI findings carefully'
+    : 'AI findings diverge from statistics — treat with caution';
+
+  const rows = comparisons.map(c => {
+    const dirColor = c.riskLevel === 'HIGH' ? 'var(--red)'
+      : c.riskLevel === 'MEDIUM' ? 'var(--amber)' : 'var(--green)';
+    const matchIcon = c.match ? '✓' : '✗';
+    const matchColor = c.match ? 'var(--green)' : 'var(--red)';
+    const bar = c.dirPct !== null
+      ? `<div class="dir-bar-wrap">
+           <div class="dir-bar" style="width:${Math.min(c.dirPct, 100)}%;background:${dirColor}"></div>
+           <span class="dir-bar-label">${c.dirPct}%</span>
+         </div>`
+      : '<span style="color:var(--text3)">—</span>';
+
+    return `
+      <tr class="val-row">
+        <td class="val-field">${c.field}</td>
+        <td>
+          <span style="color:${dirColor};font-weight:600">${c.dir !== null ? c.dir.toFixed(2) : '—'}</span>
+          <span class="val-sub">${c.riskLabel}</span>
+        </td>
+        <td>${bar}</td>
+        <td><span class="risk-chip ${c.riskLevel}" style="font-size:0.65rem">${c.riskLevel}</span></td>
+        <td><span class="risk-chip ${c.aiRiskLevel}" style="font-size:0.65rem">${c.aiRiskLevel}</span></td>
+        <td style="color:${matchColor};font-weight:700;font-size:1rem;text-align:center">${matchIcon}</td>
+      </tr>
+      <tr class="val-groups-row">
+        <td colspan="6">
+          <div class="val-groups">
+            ${c.allGroups.map(g => `
+              <div class="val-group">
+                <span class="val-group-name">${g.name}</span>
+                <div class="val-group-bar-wrap">
+                  <div class="val-group-bar" style="width:${g.hireRatePct}%;background:${g.hireRatePct >= 60 ? 'var(--green)' : g.hireRatePct >= 35 ? 'var(--amber)' : 'var(--red)'}"></div>
+                </div>
+                <span class="val-group-pct">${g.hireRatePct}% hired (${g.hired}/${g.total})</span>
+              </div>`).join('')}
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  document.getElementById('tab-validation').innerHTML = `
+    <div class="val-header">
+      <div class="val-trust">
+        <p class="val-trust-label">AI TRUST SCORE</p>
+        <p class="val-trust-val" style="color:${trustColor}">${trustScore}%</p>
+        <p class="val-trust-sub">${matchCount}/${total} findings confirmed by math</p>
+      </div>
+      <div class="val-trust-detail">
+        <p class="val-method-label">METHOD</p>
+        <p class="val-method-name">Disparate Impact Ratio (DIR)</p>
+        <p class="val-method-desc">The 80% Rule from EEOC Uniform Guidelines (1978). DIR = hire rate of disadvantaged group ÷ hire rate of advantaged group. DIR &lt; 0.8 is legally considered discriminatory. This is computed purely from your CSV data — no AI involved.</p>
+        <p class="val-verdict" style="color:${trustColor}">→ ${trustLabel}</p>
+      </div>
+    </div>
+
+    <div class="val-legend">
+      <span class="val-legend-item"><span style="color:var(--green)">✓</span> AI finding confirmed by DIR</span>
+      <span class="val-legend-item"><span style="color:var(--red)">✗</span> AI finding not confirmed — verify manually</span>
+      <span class="val-legend-item">DIR &lt; 0.80 = fails legal threshold</span>
+    </div>
+
+    <div class="table-scroll">
+      <table class="val-table">
+        <thead>
+          <tr>
+            <th>Feature</th>
+            <th>DIR Score</th>
+            <th>Visual</th>
+            <th>Math says</th>
+            <th>AI says</th>
+            <th>Match</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+
+    <div class="val-footnote">
+      <p>DIR is computed directly from your CSV — zero AI involvement. A score of 1.0 = perfect equality. The 0.80 threshold is the internationally recognised standard for adverse impact in hiring (EEOC, 1978; used in EU AI Act Article 10 fairness assessments).</p>
+    </div>`;
+}
+
 function renderResults(result, rows) {
   renderRiskBanner(result);
   renderFindings(result.findings);
   renderCorrelations(result.correlations);
   renderRecommendations(result.recommendations);
   renderAnalysis(result.raw_analysis);
-
-  // Render heatmap from actual CSV data
   renderHeatmap(rows);
+
+  // Compute DIR-based validation and render
+  const validation = computeValidation(rows, result);
+  renderValidation(validation, result);
 
   const el = document.getElementById('results');
   el.style.display = 'block';

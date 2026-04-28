@@ -1,153 +1,174 @@
-# FairHire 2.0 — AI Hiring Bias Auditor
-> Google Solution Challenge 2026 · BMSIT&M · SDG 8 + SDG 10
+# FairHire — AI Hiring Bias Auditor
 
-AI-powered hiring fairness auditor for Indian companies. Detects gender, college tier, and geographic bias using **Gemini 1.5 Pro**. Built to expose the hidden patterns that cause qualified candidates to be rejected before they're ever seen.
+> Google Solution Challenge 2026 · BMSIT&M · Team Hashes  
+> **SDG 8 — Decent Work and Economic Growth** | **SDG 10 — Reduced Inequalities**
+
+FairHire is an AI-powered hiring fairness auditor built for Indian companies. It detects gender, college tier, and geographic bias hidden inside historical hiring data — using Google Gemini to surface the patterns that cause qualified candidates to be rejected before they're ever seen.
+
+🔗 **Live Demo:** [hasini-m06.github.io/Fairhire](https://hasini-m06.github.io/Fairhire/)
 
 ---
 
-## What makes this different
+## The Problem
 
-| Feature | Most teams | FairHire |
-|---------|-----------|----------|
-| AI analysis | Generic API call | 3-stage audit (Detect → Label → Recommend) |
+Hiring bias in India is systemic and largely invisible to the people perpetuating it:
+
+- 73% of Indian recruiters admit college name influences shortlisting decisions
+- Candidates from Tier 3 colleges are 2.4× more likely to be rejected at the same experience level
+- Gender bias is most pronounced at the "culture fit" stage — the hardest stage to audit
+- Referral-heavy hiring creates demographic echo chambers that compound over time
+
+HR teams rarely have the tools to detect these patterns in their own data. FairHire changes that.
+
+---
+
+## What Makes This Different
+
+| Feature | Typical approach | FairHire |
+|---|---|---|
+| AI analysis | Single generic prompt | 3-stage audit: Detect → Label → Recommend |
+| Bias validation | Trust the AI blindly | DIR math cross-checks every AI finding |
 | Visualization | Table of results | Live bias heatmap (Gender × College Tier) |
 | Output | Text on screen | Downloadable PDF audit report |
-| Dataset | Generic CSV | India-specific (IIT/state college/metro bias) |
-| Validation | Trust the AI blindly | DIR math cross-checks every AI finding |
-| SDG alignment | Mentioned | Directly addressed in every recommendation |
+| Dataset focus | Generic / global | India-specific (IIT/state college/metro bias) |
+| SDG alignment | Mentioned in passing | Embedded in every recommendation |
 
 ---
 
-## Tech stack
+## How It Works
 
-| Layer | Tech | Cost |
-|-------|------|------|
-| AI | Gemini 1.5 Pro (Google AI Studio) | Free — 2 req/min · 50 req/day |
-| Hosting | Firebase Hosting (Google) | Free — Spark plan |
-| Frontend | HTML + CSS + Vanilla JS | Free |
-| PDF export | jsPDF 2.5 | Free |
-| Fonts | Google Fonts (Syne, DM Sans, DM Mono) | Free |
-| Charts | Chart.js | Free |
+Upload a CSV of your hiring data. FairHire runs a 3-stage pipeline:
+
+```
+CSV Upload
+    │
+    ▼
+Data Layer — parseCSV() + computeDIR() (pure math, no AI)
+    │
+    ▼
+AI Engine — Google Gemini 1.5 Pro (3-stage audit prompt)
+    │
+    ▼
+Validation — DIR math cross-checks every Gemini finding
+    │
+    ▼
+Output — 6-tab results dashboard + downloadable PDF report
+```
+
+### The 3-Stage Gemini Audit
+
+1. **Detect** — Identify statistical anomalies across gender, college tier, location, and experience
+2. **Label** — Classify each anomaly by bias type and severity (High / Medium / Low risk)
+3. **Recommend** — Generate SDG-aligned, plain-language steps HR teams can act on immediately
+
+### The Validation Layer (DIR)
+
+FairHire does not trust AI output blindly. Every Gemini finding is cross-checked against the **Disparate Impact Ratio (DIR)** — computed directly from your CSV:
+
+- `DIR = hire_rate(disadvantaged group) ÷ hire_rate(advantaged group)`
+- `DIR < 0.80` → fails the EEOC 80% Rule (considered legally discriminatory)
+- `DIR < 0.50` → severe disparity
+
+An **AI Trust Score** shows how many of Gemini's findings are confirmed by the math.
+
+---
+
+## Tech Stack
+
+| Layer | Technology | Notes |
+|---|---|---|
+| AI | Google Gemini 1.5 Pro | Via Google AI Studio API |
+| Hosting | GitHub Pages | Free, zero config |
+| Frontend | HTML + CSS + Vanilla JS | No framework needed |
+| PDF Export | jsPDF 2.5 | Client-side PDF generation |
+| Fonts | Google Fonts (Syne, DM Sans, DM Mono) | |
 
 **Total infrastructure cost: $0**
 
 ---
 
-## Project structure
+## Project Structure
 
 ```
 fairhire/
-├── index.html          # App shell — set window.GEMINI_KEY here
+├── index.html        # App shell — add your Gemini API key here
 ├── src/
-│   ├── style.css       # Design tokens + all components
-│   ├── data.js         # India hiring dataset + CSV parser + DIR math
-│   ├── api.js          # Gemini 1.5 Pro audit engine
-│   ├── heatmap.js      # Bias heatmap renderer
-│   ├── render.js       # All DOM rendering functions
-│   ├── export.js       # PDF report generator (jsPDF)
-│   └── main.js         # App state + event listeners
-├── firebase.json       # Firebase Hosting config
-├── vite.config.js      # Vite build config
-└── package.json
+│   ├── style.css     # Design tokens + all component styles
+│   ├── data.js       # CSV parser + DIR math (Disparate Impact Ratio)
+│   ├── api.js        # Gemini 1.5 Pro audit engine
+│   ├── heatmap.js    # Bias heatmap renderer (Gender × College Tier)
+│   ├── render.js     # DOM rendering for all 6 output tabs
+│   ├── export.js     # PDF report generator
+│   └── main.js       # App state + event listeners
+└── README.md
 ```
 
 ---
 
-## Setup
+## Running Locally
 
-### 1. Get a free Gemini API key
-Go to [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey) and create a key.
-Free tier: **2 requests/min · 50 requests/day · $0**.
+No build step required.
 
-### 2. Add your key to index.html
-Open `index.html` and find this line:
+**Option A — VS Code Live Server:**
+1. Install the Live Server extension in VS Code
+2. Right-click `index.html` → Open with Live Server
+
+**Option B — Python simple server:**
+```bash
+python -m http.server 8000
+# Open http://localhost:8000
+```
+
+### API Key Setup
+
+1. Get a free Gemini API key at [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)  
+   *(Free tier: 15 requests/min · 1,500 requests/day)*
+
+2. Open `index.html` and find:
 ```html
 <script>
   window.GEMINI_KEY = 'YOUR_GEMINI_API_KEY_HERE';
 </script>
 ```
-Replace `YOUR_GEMINI_API_KEY_HERE` with your actual key.
+3. Replace the placeholder with your actual key.
 
-> ⚠️ Never commit a real API key to GitHub. For production, use Firebase environment config or inject the key at deploy time via your CI/CD pipeline.
-
-### 3. Run locally
-No build step needed for development.
-
-```bash
-# Option A: VS Code Live Server
-# Right-click index.html → Open with Live Server
-
-# Option B: Vite dev server
-npm install
-npm run dev
-```
-
-### 4. Deploy to Firebase Hosting (Google)
-```bash
-npm install -g firebase-tools
-firebase login
-npm run build        # builds to /dist
-firebase deploy
-```
-
-Your app will be live at `https://fairhire-23ab7.web.app`
+> ⚠️ Never commit a real API key to a public repository. For your own deployment, inject the key via an environment variable or a backend proxy.
 
 ---
 
-## How the audit works
+## SDG Alignment
 
-```
-CSV upload
-    │
-    ▼
-data.js — parseCSV() + computeDIR() (pure math, no AI)
-    │
-    ▼
-api.js — buildAuditPrompt() → Gemini 1.5 Pro
-    │
-    ▼
-parseAuditResponse() — validates + normalises JSON
-    │
-    ▼
-render.js — renderResults() → 6 tabs of output
-    │
-    ├── Bias findings (Gemini)
-    ├── Bias heatmap (Gender × College Tier)
-    ├── Correlations (Gemini)
-    ├── Recommendations (Gemini, SDG-aligned)
-    ├── Full analysis (Gemini)
-    └── Validation (DIR math cross-checks AI findings)
-    │
-    ▼
-export.js — PDF report download (jsPDF)
-```
+**SDG 8 — Decent Work and Economic Growth**  
+Biased hiring directly reduces economic opportunity for qualified candidates from non-elite colleges and underrepresented groups. FairHire gives HR teams the evidence they need to build more merit-based pipelines.
 
-### Validation layer (DIR)
-FairHire does not trust AI blindly. Every Gemini finding is cross-checked against the **Disparate Impact Ratio (DIR)** computed purely from your CSV data:
-
-- `DIR = hire_rate(disadvantaged group) ÷ hire_rate(advantaged group)`
-- `DIR < 0.80` → fails the EEOC 80% Rule (legally discriminatory)
-- `DIR < 0.50` → severe disparity
-
-An **AI Trust Score** shows how many Gemini findings are confirmed by the math.
+**SDG 10 — Reduced Inequalities**  
+The college tier divide in Indian hiring (IIT vs. state colleges) and persistent gender gaps at the screening stage perpetuate structural inequality. FairHire makes these patterns visible and actionable.
 
 ---
 
-## SDG alignment
+## Future Scope
 
-**SDG 8 — Decent Work and Economic Growth**
-Biased hiring directly reduces economic opportunity for qualified candidates from non-elite backgrounds.
+The current version audits historical hiring data via CSV. The roadmap includes:
 
-**SDG 10 — Reduced Inequalities**
-College tier and gender bias in Indian hiring perpetuates structural inequality between IIT graduates and state college graduates, and between male and female candidates.
+- **Real-time resume parsing** — Upload candidate resumes directly; Gemini extracts skills and flags PII for anonymization before scoring
+- **Codeforces & LeetCode integration** — Pull verified competitive programming ratings to objectively validate technical skill claims
+- **GitHub activity verification** — Cross-reference claimed experience against real repository contributions and commit history
+- **Automated interview scheduling** — Let recruiters book interviews with top-ranked, anonymized candidates directly from the dashboard
+- **Bias trend reports** — Track how a company's diversity and merit-based hiring metrics improve over time
+- **Deepfake & profile authenticity detection** — Verify submitted media and portfolio links are genuine
+- **Multi-platform developer scraper** — Extend skill verification to Kaggle, Dev.to, Stack Overflow, and regional contest platforms
+- **Cloud deployment** — Migrate from GitHub Pages to a scalable backend (GCP Cloud Run) to support enterprise-scale data volumes and secure multi-user access
 
 ---
 
-## The bias problem in India
+## Team
 
-- 73% of Indian recruiters admit college name influences shortlisting decisions
-- Candidates from Tier 3 colleges are 2.4× more likely to be rejected at the same experience level
-- Gender bias is most pronounced at the "culture fit" stage of interviews
-- Referral-heavy hiring creates demographic echo chambers
+**Team Hashes** · BMSIT&M, Bengaluru  
+Team Leader: Hasini M  
+Google Solution Challenge 2026
 
-FairHire audits these exact patterns and gives HR teams plain-language, actionable steps to fix them.
+---
+
+## License
+
+MIT

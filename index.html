@@ -1,162 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="FairHire — AI-powered hiring bias auditor for Indian companies." />
-  <title>FairHire — AI Hiring Bias Auditor</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <link rel="stylesheet" href="src/style.css" />
-
-  <!-- ── Gemini API Key ──────────────────────────────────
-       Replace the value below with your key from:
-       https://aistudio.google.com/app/apikey
-       Free tier: 2 req/min · 50 req/day · zero cost.
-       DO NOT commit a real key — add this file to .gitignore
-       or use an environment variable in your CI/CD pipeline. -->
-  <script>
-    window.GEMINI_KEY = AIzaSyB7nML4hvXefFoKz5i9gMnz7mOQaCIVlMU;
-  </script>
+    <meta charset="UTF-8">
+    <title>FairHire | Global AI Bias Auditor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>window.GEMINI_KEY = 'YOUR_API_KEY_HERE';</script>
 </head>
-<body>
-
-  <nav class="nav">
-    <div class="nav-inner">
-      <div class="nav-logo">
-        <span class="nav-logo-mark">F</span>
-        <span class="nav-logo-text">Fair<em>Hire</em></span>
-      </div>
-      <div class="nav-pills">
-        <span class="pill">SDG 8</span>
-        <span class="pill">SDG 10</span>
-        <span class="pill pill--hi">Solution Challenge 2026</span>
-      </div>
-    </div>
-  </nav>
-
-  <section class="hero">
-    <div class="container">
-      <p class="eyebrow">Powered by Gemini 1.5 Pro</p>
-      <h1>Your hiring pipeline<br /><em>is probably biased.</em></h1>
-      <p class="hero-sub">Upload candidate data. Get an AI fairness audit in seconds — bias findings, correlation heatmap, and a PDF report your HR team can act on.</p>
-      <div class="hero-stats">
-        <div class="stat">
-          <span class="stat-n">73%</span>
-          <span class="stat-l">of Indian recruiters say college name influences shortlisting</span>
-        </div>
-        <div class="stat-div"></div>
-        <div class="stat">
-          <span class="stat-n">2.4×</span>
-          <span class="stat-l">more likely rejected from a Tier 3 college vs Tier 1</span>
-        </div>
-        <div class="stat-div"></div>
-        <div class="stat">
-          <span class="stat-n">41%</span>
-          <span class="stat-l">of gender pay gap traces to biased initial screening</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <main class="container main">
-
-    <!-- 01 Upload -->
-    <div class="step" id="stepUpload">
-      <div class="step-num">01</div>
-      <div class="step-content">
-        <h2>Load candidate data</h2>
-        <p class="step-desc">Upload a CSV or try our synthetic India hiring dataset modeled on real Bangalore/Mumbai recruiting patterns.</p>
-        <div class="upload-zone" id="uploadZone">
-          <input type="file" accept=".csv" id="fileInput" />
-          <div class="upload-inner">
-            <div class="upload-arrow">↑</div>
-            <p class="upload-main" id="uploadMain">Drop your CSV here</p>
-            <p class="upload-hint" id="uploadHint">or click to browse &mdash; columns: name, gender, college_tier, location, years_exp, hired</p>
-          </div>
-        </div>
-        <div class="upload-foot">
-          <button class="btn-ghost" id="demoBtn">Load India demo dataset ↗</button>
-          <span class="foot-note">20 candidates · synthetic but realistic</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 02 Preview -->
-    <div class="step" id="stepPreview" style="display:none">
-      <div class="step-num">02</div>
-      <div class="step-content">
-        <h2>Data preview</h2>
-        <div id="colTags" class="col-tags"></div>
-        <div class="table-scroll">
-          <table id="previewTable" class="data-table"></table>
-        </div>
-        <p id="dataNote" class="data-note"></p>
-      </div>
-    </div>
-
-    <!-- 03 Analyze -->
-    <div class="step">
-      <div class="step-num">03</div>
-      <div class="step-content">
-        <h2>Run audit</h2>
-        <p class="step-desc">Gemini 1.5 Pro analyses gender, college tier, location, and experience patterns against your hiring outcomes.</p>
-        <button class="btn-primary" id="analyzeBtn" disabled>Analyze for bias →</button>
-      </div>
-    </div>
-
-    <!-- Results -->
-    <div id="results" style="display:none">
-
-      <div id="riskBanner"></div>
-
-      <div class="panel">
-        <div class="tabs" id="tabs">
-          <button class="tab active" data-tab="findings">Bias findings</button>
-          <button class="tab" data-tab="heatmap">Bias heatmap</button>
-          <button class="tab" data-tab="correlations">Correlations</button>
-          <button class="tab" data-tab="recs">Recommendations</button>
-          <button class="tab" data-tab="analysis">Full analysis</button>
-          <button class="tab tab--validation" data-tab="validation">✓ Validation</button>
-        </div>
-        <div id="tab-findings" class="tab-pane"></div>
-        <div id="tab-heatmap" class="tab-pane" style="display:none">
-          <p class="heatmap-note">Each cell = hire rate (%) for that Gender × College Tier combination. Red = higher bias risk.</p>
-          <div id="heatmapWrap"></div>
-        </div>
-        <div id="tab-correlations" class="tab-pane" style="display:none"></div>
-        <div id="tab-recs" class="tab-pane" style="display:none"></div>
-        <div id="tab-analysis" class="tab-pane" style="display:none"></div>
-        <div id="tab-validation" class="tab-pane" style="display:none"></div>
-      </div>
-
-      <div class="export-bar">
+<body class="bg-[#0f172a] text-slate-200 font-mono p-6 md:p-12">
+    <header class="max-w-5xl mx-auto mb-12 flex justify-between items-end border-b border-slate-800 pb-6">
         <div>
-          <p class="export-title">Audit report ready</p>
-          <p class="export-sub">Download a formatted PDF to share with your HR team or compliance officer.</p>
+            <h1 class="text-4xl font-black tracking-tighter text-white uppercase">FairHire <span class="text-blue-500">Audit_v1.0</span></h1>
+            <p class="text-slate-500 text-sm mt-2">Global Algorithmic Transparency Engine • Powered by Gemini 1.5 Pro</p>
         </div>
-        <button class="btn-export" id="exportBtn">↓ Download PDF report</button>
-      </div>
+        <div class="text-right text-xs text-slate-600 hidden md:block">
+            STATUS: SYSTEM_READY<br>LOCATION: GLOBAL_EDGE
+        </div>
+    </header>
 
-    </div>
+    <main class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <section class="lg:col-span-1 space-y-6">
+            <div class="bg-[#1e293b] p-6 rounded-sm border border-slate-800">
+                <h2 class="text-blue-500 font-bold mb-4 uppercase text-xs">Terminal_Input</h2>
+                <input type="file" id="csvFile" accept=".csv" class="text-xs text-slate-400 file:bg-slate-700 file:text-white file:border-0 file:px-3 file:py-1 file:rounded-sm file:mr-4 cursor-pointer w-full">
+                <button id="auditBtn" class="mt-6 w-full bg-blue-600 hover:bg-blue-500 text-white py-3 font-bold uppercase tracking-widest text-sm transition-all border-b-4 border-blue-800 active:border-0">Execute_Audit</button>
+            </div>
+        </section>
 
-  </main>
-
-  <footer class="footer">
-    <p>FairHire &copy; 2026 &middot; Built for Google Solution Challenge &middot; BMSIT&amp;M</p>
-    <p class="footer-stack">Gemini 1.5 Pro &middot; Firebase Hosting &middot; jsPDF &middot; Vanilla JS</p>
-  </footer>
-
-  <!-- Scripts loaded in dependency order — data.js must come before render.js -->
-  <script src="src/data.js"></script>
-  <script src="src/api.js"></script>
-  <script src="src/heatmap.js"></script>
-  <script src="src/render.js"></script>
-  <script src="src/export.js"></script>
-  <script src="src/main.js"></script>
-
+        <section class="lg:col-span-2">
+            <div id="loading" class="hidden font-mono text-blue-400 animate-pulse">>> ANALYZING_DATASET_FOR_BIAS_VECTORS...</div>
+            <div id="results" class="hidden space-y-6"></div>
+        </section>
+    </main>
+    <script type="module" src="render.js"></script>
 </body>
 </html>

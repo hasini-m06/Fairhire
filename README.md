@@ -53,18 +53,9 @@ firebase deploy
 
 Your app will be live at `https://your-project.web.app`
 
-## API key setup (for standalone deployment)
-
-The Anthropic API key is proxied by claude.ai when running inside the artifact.
+## API & Backend Setup
+FairHire uses a dedicated Python/FastAPI backend to securely handle Google Gemini API calls, preventing frontend key exposure.
 For your own Firebase deployment, add your key in `src/api.js`:
-
-```js
-headers: {
-  'Content-Type': 'application/json',
-  'x-api-key': process.env.ANTHROPIC_API_KEY,  // use env var, never hardcode
-  'anthropic-version': '2023-06-01'
-}
-```
 
 > Never commit API keys to GitHub. Use Firebase environment config or a backend proxy.
 

@@ -1,32 +1,36 @@
-const { onRequest } = require("firebase-functions/v2/https");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
+const { defineSecret } = require("firebase-functions/params");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+// 1. Tell Firebase we are using this secret
+const geminiApiKey = defineSecret("GEMINI_API_KEY");
 
-// Define the System Instruction for GDG quality
-const systemInstruction = `
-  You are an expert DEI (Diversity, Equity, and Inclusion) Auditor. 
-  Your goal is to identify hidden biases in job descriptions and hiring rubrics.
-  Align your analysis with UN Sustainable Development Goal 10 (Reduced Inequalities).
-  Analyze the text for: Gender bias, Ageism, Ableism, and Socio-economic exclusion.
-  Output MUST be in structured JSON format.
-`;
+// 2. Bind the secret to the function
+exports.runAudit = onCall({ 
+    cors: true, 
+    secrets: [geminiApiKey] 
+}, async (request) => {
+    try {
+        const csvData = request.data.csvData;
+        if (!csvData) {
+            throw new HttpsError("invalid-argument", "CSV data is required.");
+        }
 
-exports.api = onRequest({ cors: true }, async (req, res) => {
-  try {
-    const { prompt } = req.body;
-    
-    // Using the 'systemInstruction' feature is a plus for the contest
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-pro",
-      systemInstruction: systemInstruction 
-    });
-
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-
-    res.status(200).send(text);
-  } catch (error) {
-    res.status(500).json({ error: "Audit Failed", details: error.message });
-  }
+        // 3. Initialize Gemini using the securely injected value
+        const genAI = new GoogleGenerativeAI(geminiApiKey.value());
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+        
+        const prompt = `
+        Analyze this hiring data for gender, location, and college tier bias. 
+        Provide the output strictly in JSON format with keys: 'findings', 'recommendations'.
+        Data: ${csvData}
+        `;
+        
+        const result = await model.generateContent(prompt);
+        return { result: result.response.text() };
+        
+    } catch (error) {
+        console.error("AI Audit Error:", error);
+        throw new HttpsError("internal", "Failed to process audit.");
+    }
 });

@@ -1,4 +1,4 @@
-const GEMINI_MODEL = 'gemini-1.5-pro';
+const GEMINI_MODEL = 'gemini-1.5-flash';
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 function getApiKey() {

@@ -11,6 +11,16 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="src/style.css" />
+
+  <!-- ── Gemini API Key ──────────────────────────────────
+       Replace the value below with your key from:
+       https://aistudio.google.com/app/apikey
+       Free tier: 2 req/min · 50 req/day · zero cost.
+       DO NOT commit a real key — add this file to .gitignore
+       or use an environment variable in your CI/CD pipeline. -->
+  <script>
+    window.GEMINI_KEY = AIzaSyB7nML4hvXefFoKz5i9gMnz7mOQaCIVlMU;
+  </script>
 </head>
 <body>
 
@@ -70,7 +80,7 @@
         </div>
         <div class="upload-foot">
           <button class="btn-ghost" id="demoBtn">Load India demo dataset ↗</button>
-          <span class="foot-note">15 candidates · synthetic but realistic</span>
+          <span class="foot-note">20 candidates · synthetic but realistic</span>
         </div>
       </div>
     </div>
@@ -93,7 +103,7 @@
       <div class="step-num">03</div>
       <div class="step-content">
         <h2>Run audit</h2>
-        <p class="step-desc">Gemini analyzes gender, college tier, location, and experience patterns against your hiring outcomes.</p>
+        <p class="step-desc">Gemini 1.5 Pro analyses gender, college tier, location, and experience patterns against your hiring outcomes.</p>
         <button class="btn-primary" id="analyzeBtn" disabled>Analyze for bias →</button>
       </div>
     </div>
@@ -137,14 +147,16 @@
 
   <footer class="footer">
     <p>FairHire &copy; 2026 &middot; Built for Google Solution Challenge &middot; BMSIT&amp;M</p>
-    <p class="footer-stack">Gemini 1.5 Pro &middot; Chart.js &middot; Firebase Hosting &middot; Vanilla JS</p>
+    <p class="footer-stack">Gemini 1.5 Pro &middot; Firebase Hosting &middot; jsPDF &middot; Vanilla JS</p>
   </footer>
 
+  <!-- Scripts loaded in dependency order — data.js must come before render.js -->
   <script src="src/data.js"></script>
   <script src="src/api.js"></script>
   <script src="src/heatmap.js"></script>
   <script src="src/render.js"></script>
   <script src="src/export.js"></script>
   <script src="src/main.js"></script>
+
 </body>
 </html>

@@ -1,16 +1,16 @@
 import { defineConfig } from 'vite';
 
+// ── Vite config for FairHire ──────────────────────────────
+//
+//  No proxy needed — Gemini API is called directly from
+//  the browser using window.GEMINI_KEY set in index.html.
+//
+//  Firebase Functions proxy has been removed entirely.
+//  Gemini 1.5 Pro supports browser-direct calls.
+
 export default defineConfig({
-  server: {
-    proxy: {
-      '/api': {
-        // This proxies requests from http://localhost:5173/api/audit 
-        // to your local Firebase Emulator running on port 5001.
-        // Make sure to replace 'fairhire' with your actual Firebase project ID if different.
-        target: 'http://127.0.0.1:5001/fairhire/us-central1',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-      },
-    },
-  },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true
+  }
 });

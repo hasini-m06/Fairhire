@@ -2,7 +2,11 @@ const GEMINI_MODEL = 'gemini-flash-latest'; // Switch to Flash latest for 100% c
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 function getApiKey() {
-    return import.meta.env.VITE_GEMINI_KEY || window.GEMINI_KEY || ""; 
+    // Safely check for Vite environment variables to avoid crashing on static hosts (like GitHub Pages)
+    if (typeof import !== 'undefined' && import.meta && import.meta.env && import.meta.env.VITE_GEMINI_KEY) {
+        return import.meta.env.VITE_GEMINI_KEY;
+    }
+    return window.GEMINI_KEY || ""; 
 }
 
 function buildAuditPrompt(csvData) {

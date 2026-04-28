@@ -1,37 +1,48 @@
+/**
+ * FairHire | Advanced Algorithmic Forensic Engine
+ * Implements: EEOC Four-Fifths Rule & Disparate Impact Analysis
+ */
+
 const GEMINI_MODEL = 'gemini-1.5-pro';
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 function getApiKey() {
-    return window.GEMINI_KEY || null; 
+    return window.GEMINI_KEY || import.meta.env.VITE_GEMINI_KEY;
 }
 
 function buildAuditPrompt(csvData) {
-    return `You are the World-Class AI Bias Auditor. 
-    Your mission: Scrutinize the provided dataset for systemic discrimination and hidden algorithmic bias.
+    return `You are a Senior AI Ethics Auditor. You are performing a formal forensic audit on a hiring algorithm's output.
 
-    DATASET FOR AUDIT:
-    ${csvData}
+DATASET:
+${csvData}
 
-    AUDIT PARAMETERS:
-    1. DISPARATE IMPACT: Apply the 80% Rule (Four-Fifths Rule). Flag any protected group (Gender, Ethnicity, Age, Socioeconomic background) receiving favorable outcomes at a rate less than 80% of the highest group.
-    2. PROXY DETECTION: Identify 'Neutral' variables acting as proxies for protected classes (e.g., Zip Code as a proxy for Race).
-    3. GLOBAL STANDARDS: Audit based on UN Human Rights principles and SDG 10 (Reduced Inequalities).
-    
-    OUTPUT REQUIREMENTS:
-    Return ONLY a JSON object. Clinical tone. No fluff.
-    {
-        "risk_level": "CRITICAL | HIGH | MEDIUM | LOW",
-        "risk_summary": "High-level summary of the ethical integrity of this system.",
-        "findings": [{"title": "Finding Name", "detail": "Statistical evidence of bias.", "severity": "HIGH/LOW"}],
-        "recommendations": [{"title": "Mitigation Strategy", "body": "How to de-bias this model.", "action": "Immediate technical fix."}],
-        "raw_analysis": "Deep-dive technical breakdown of correlation coefficients and bias vectors."
-    }`;
+AUDIT PROTOCOL:
+1. CALCULATE DISPARATE IMPACT RATIO (DIR): 
+   - Identify the majority group (highest hire rate).
+   - Identify protected groups (Gender, Tier-3 Colleges, Rural Locations).
+   - If (Protected Group Hire Rate / Majority Group Hire Rate) < 0.8, flag as VIOLATION of the Four-Fifths Rule.
+
+2. PROXY BIAS ANALYSIS:
+   - Check if 'Years of Experience' is being used to mask 'Ageism'.
+   - Check if 'Candidate Address' is a proxy for 'Socioeconomic Status'.
+
+3. QUALITATIVE ETHICS:
+   - Cross-reference findings with SDG 10.2 (Promote social, economic, and political inclusion).
+
+OUTPUT STRUCTURE (Strict JSON):
+{
+    "risk_score": 0-100,
+    "dir_stats": "Detailed math showing the hire rates per group.",
+    "violations": [{"group": "string", "ratio": "number", "status": "FAIL/PASS"}],
+    "findings": [{"title": "string", "impact": "HIGH/MED", "analysis": "string"}],
+    "mitigation": "Technical strategy to de-bias the weights."
+}`;
 }
 
 export async function runAudit(csvData) {
     const apiKey = getApiKey();
-    if (!apiKey) throw new Error("API Key Missing! Update index.html.");
     const url = `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+
     const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -43,7 +54,9 @@ export async function runAudit(csvData) {
             }
         })
     });
-    const data = await response.json();
-    const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    return JSON.parse(raw);
+
+    if (!response.ok) throw new Error("Auditor Offline - Check API Key");
+
+    const result = await response.json();
+    return JSON.parse(result.candidates[0].content.parts[0].text);
 }

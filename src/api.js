@@ -1,14 +1,24 @@
-const GEMINI_MODEL = 'gemini-1.5-flash'; // Switch to Flash for 100% compatibility
+const GEMINI_MODEL = 'gemini-flash-latest'; // Switch to Flash latest for 100% compatibility
 const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 function getApiKey() {
-    return window.GEMINI_KEY || ""; 
+    return import.meta.env.VITE_GEMINI_KEY || window.GEMINI_KEY || ""; 
 }
 
 function buildAuditPrompt(csvData) {
     return `Audit this hiring dataset for bias. Return ONLY JSON.
     DATA: ${csvData}
-    FORMAT: {"risk_score": 0, "dir_stats": "string", "violations": [], "findings": [], "mitigation": "string"}`;
+    FORMAT: {
+      "risk_level": "HIGH | MEDIUM | LOW",
+      "risk_summary": "Short verdict on fairness",
+      "findings": [
+        {
+          "title": "Finding name",
+          "detail": "Data-backed observation",
+          "severity": "HIGH | MEDIUM | LOW"
+        }
+      ]
+    }`;
 }
 
 export async function runAudit(csvData) {
@@ -32,13 +42,33 @@ export async function runAudit(csvData) {
     if (!response.ok) {
         const errData = await response.json();
         console.error("API ERROR:", errData);
-        throw new Error(`API_ERROR: ${response.status}`);
+        const errorMsg = errData?.error?.message || `API_ERROR: ${response.status}`;
+        throw new Error(errorMsg);
     }
 
     const result = await response.json();
-    const rawText = result.candidates[0].content.parts[0].text;
+    const rawText = result.candidates[0]?.content?.parts[0]?.text;
+    
+    if (!rawText) {
+        console.error("No text in response:", result);
+        throw new Error("Invalid API Response format");
+    }
+
+    console.log("Raw Gemini Response:", rawText);
     
     // Fail-safe JSON cleaning
-    const cleanJson = rawText.replace(/```json|```/g, "").trim();
-    return JSON.parse(cleanJson);
+    const cleanJson = rawText.replace(/```json|```/gi, "").trim();
+    let parsedData;
+    try {
+        parsedData = JSON.parse(cleanJson);
+    } catch (e) {
+        console.error("JSON Parse Error. Cleaned text:", cleanJson);
+        throw new Error("Failed to parse Gemini output as JSON");
+    }
+
+    if (!Array.isArray(parsedData.findings)) {
+        parsedData.findings = [];
+    }
+    
+    return parsedData;
 }

@@ -109,17 +109,18 @@
                     </div>
 
                     <div class="tabs" id="tabs">
-                        <button class="tab active" data-tab="findings">Findings</button>
-                        <button class="tab" data-tab="heatmap">Heatmap</button>
-                        <button class="tab" data-tab="validation">Validation</button>
-                        <button class="tab" data-tab="simulator">Simulator</button>
-                        <button class="tab" data-tab="recs">Actions</button>
+                        <button class="tab active" data-tab="findings">Audit Findings</button>
+                        <button class="tab" data-tab="heatmap">Bias Heatmap</button>
+                        <button class="tab" data-tab="validation">DIR Validation</button>
+                        <button class="tab" data-tab="benchmark">Industry Benchmark</button>
+                        <button class="tab" data-tab="simulator">Impact Simulator</button>
+                        <button class="tab" data-tab="recs">Strategy</button>
                     </div>
 
                     <!-- Findings Pane -->
                     <div id="tab-findings" class="tab-pane">
                         <div id="riskBannerWrap"></div>
-                        <div class="panel" id="findingsList"></div>
+                        <div class="panel mt-8" id="findingsList"></div>
                     </div>
 
                     <!-- Heatmap Pane -->
@@ -138,6 +139,15 @@
                                 <div class="trust-label">AI TRUST SCORE</div>
                             </div>
                             <div id="validationList" class="mt-6"></div>
+                        </div>
+                    </div>
+
+                    <!-- Benchmark Pane -->
+                    <div id="tab-benchmark" class="tab-pane" style="display: none;">
+                        <div class="panel">
+                            <div class="benchmark-stat" id="benchmarkStat"></div>
+                            <div id="benchmarkChart"></div>
+                            <p class="step-desc mt-6">This data compares your DIR scores against anonymized benchmarks from the Indian Tech Sector (Source: FairHire Global Ledger).</p>
                         </div>
                     </div>
 

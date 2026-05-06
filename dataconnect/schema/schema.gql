@@ -1,0 +1,11 @@
+# Firebase Data Connect Schema
+# Using PostgreSQL for Global Fairness Benchmarking
+
+type BenchmarkEntry @table {
+  id: UUID! @default(expr: "uuid_generate_v4()")
+  field: String! # gender, college_tier, location
+  dirScore: Float! # The calculated DIR (0.0 to 1.0)
+  industry: String! @default(value: "Tech")
+  isAnonymized: Boolean! @default(value: true)
+  createdAt: Timestamp! @default(expr: "request.time")
+}

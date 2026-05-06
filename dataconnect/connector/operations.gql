@@ -1,0 +1,17 @@
+# Global Benchmark Operations
+
+# 1. Store a new audit finding
+mutation CreateBenchmark($field: String!, $score: Float!) @auth(level: PUBLIC) {
+  benchmarkEntry_insert(data: {
+    field: $field,
+    dirScore: $score
+  })
+}
+
+# 2. Get industry averages for comparison
+query GetIndustryAverages @auth(level: PUBLIC) {
+  benchmarkEntries(where: { industry: { eq: "Tech" } }) {
+    field
+    dirScore
+  }
+}

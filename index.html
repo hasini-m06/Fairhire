@@ -78,12 +78,30 @@
                     <button class="btn-secondary mt-6" id="analyzeJDBtn">Audit JD Text →</button>
                 </div>
             </div>
+
+            <!-- Resume Batch Audit -->
+            <div class="step">
+                <div class="step-num">03</div>
+                <div class="step-content">
+                    <h2>Blind Resume Audit</h2>
+                    <p class="step-desc">Upload multiple resumes. Gemini extracts skills while <strong>shielding identities</strong>.</p>
+                    
+                    <div class="upload-zone" id="resumeZone">
+                        <input type="file" id="resumeInput" accept=".pdf" multiple hidden>
+                        <div class="upload-icon">📄</div>
+                        <div class="upload-main" id="resumeMain">Upload PDF Resumes</div>
+                        <div class="upload-hint">Batch process up to 5 resumes</div>
+                    </div>
+                    
+                    <button class="btn-primary mt-6" id="analyzeResumesBtn" disabled>Run Blind Evaluation →</button>
+                </div>
+            </div>
         </div>
 
         <!-- 2. Results Dashboard -->
         <section id="results" style="display: none;">
             <div class="step mt-12">
-                <div class="step-num">03</div>
+                <div class="step-num">04</div>
                 <div class="step-content">
                     <div class="results-header-bar">
                         <h2>Audit Intelligence</h2>

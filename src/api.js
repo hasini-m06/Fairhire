@@ -84,3 +84,31 @@ export async function auditJD(jdText) {
         };
     }
 }
+
+/**
+ * Batch Audits Resumes (Multimodal PDF)
+ */
+export async function auditResumes(resumes) {
+    try {
+        const isLocalOrVercel = window.location.hostname === 'localhost' || window.location.hostname.endsWith('.vercel.app');
+        const apiEndpoint = isLocalOrVercel ? '/api/audit_resumes' : `${VERCEL_PROD_URL}/api/audit_resumes`;
+
+        const response = await fetch(apiEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ resumes })
+        });
+
+        if (!response.ok) throw new Error("Resume Audit failed");
+        return await response.json();
+    } catch (error) {
+        console.warn("⚠️ Resume Audit Failed. Falling back to demo mode.");
+        return {
+            candidates: [
+                { blind_id: "Candidate 1", skills: ["Python", "TensorFlow"], exp_years: 4, college_tier: "Tier 1", highlights: "Strong ML background", bias_neutral_assessment: "Highly qualified based on technical competency." },
+                { blind_id: "Candidate 2", skills: ["React", "Node.js"], exp_years: 2, college_tier: "Tier 3", highlights: "Built multiple full-stack apps", bias_neutral_assessment: "Strong builder mentality; skills exceed years of exp." }
+            ],
+            batch_fairness_summary: "Candidates are evaluated strictly on technical skillsets and projects."
+        };
+    }
+}

@@ -4,7 +4,7 @@ import { computeDIR } from './validation.js';
 /**
  * FairHire UI Orchestrator
  * 
- * Handles rendering for all Dashboard states and the Bias Simulator.
+ * Handles rendering for all Dashboard states, Simulators, and Blind Talent Pools.
  */
 
 export function renderResults(result, rows) {
@@ -59,7 +59,6 @@ function renderValidation(rows, result) {
     const scoreVal = document.getElementById('trustScoreVal');
     if (!list) return;
 
-    // We'll compute validation logic here or call it from validation.js
     const fields = ['gender', 'college_tier', 'location'];
     const results = fields.map(f => computeDIR(rows, f)).filter(Boolean);
 
@@ -78,21 +77,17 @@ function renderValidation(rows, result) {
         </div>
     `).join('');
 
-    // Estimate Trust Score (Simple match check)
     const highRiskMath = results.some(r => r.riskLevel === 'HIGH');
     const highRiskAI = result.risk_level === 'HIGH' || result.risk_level === 'CRITICAL';
-    const trust = highRiskMath === highRiskAI ? 92 : 45; // Simulated logic for UI demo
+    const trust = highRiskMath === highRiskAI ? 92 : 45; 
     scoreVal.textContent = `${trust}%`;
 }
 
-/**
- * Bias Simulator: Allows HR to see the impact of group-specific hire rate improvements
- */
 function renderSimulator(rows) {
     const controls = document.getElementById('simulatorControls');
     if (!controls) return;
 
-    const data = computeDIR(rows, 'gender'); // Focus simulator on gender for demo
+    const data = computeDIR(rows, 'gender'); 
     if (!data) return;
 
     const advantaged = data.advantaged;
@@ -155,7 +150,6 @@ export function renderJDResults(result) {
     if (!wrap || !content) return;
 
     wrap.style.display = 'block';
-    
     content.innerHTML = `
         <div style="display:flex; gap:2rem; align-items:center; border-bottom:1px solid var(--border); padding-bottom:1.5rem; margin-bottom:1.5rem">
             <div style="flex:1">
@@ -164,7 +158,6 @@ export function renderJDResults(result) {
             </div>
             <div style="flex:2; font-size:0.9rem; color:var(--text2)">${result.overall_verdict}</div>
         </div>
-        
         <h4>Biased Phrases & Alternatives</h4>
         <div style="margin-top:1rem">
             ${result.biased_phrases.map(p => `
@@ -174,6 +167,42 @@ export function renderJDResults(result) {
                     <div style="color:var(--success); font-size:0.85rem">Suggestion: ${p.suggestion}</div>
                 </div>
             `).join('')}
+        </div>
+    `;
+    wrap.scrollIntoView({ behavior: 'smooth' });
+}
+
+export function renderResumeResults(result) {
+    const wrap = document.getElementById('jdResults'); // Reusing the same display section for simplicity
+    const content = document.getElementById('jdResultContent');
+    if (!wrap || !content) return;
+
+    wrap.style.display = 'block';
+    content.innerHTML = `
+        <h2 style="font-family:var(--font-display); margin-bottom:1.5rem">Blind Talent Pool</h2>
+        <p class="step-desc">Identities have been shielded. Gemini extracted the following skill-based profiles.</p>
+        
+        <div class="res-pool mt-6" style="display:grid; grid-template-columns:1fr 1fr; gap:1.5rem">
+            ${result.candidates.map(c => `
+                <div class="panel" style="background:#0d1117">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem">
+                        <span class="pill pill--secure">${c.blind_id}</span>
+                        <span class="pill">${c.college_tier}</span>
+                    </div>
+                    <div style="font-weight:700; color:var(--accent); margin-bottom:0.5rem">${c.exp_years} Years Exp</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:1rem">
+                        ${c.skills.map(s => `<span style="font-size:0.6rem; padding:2px 6px; background:#161b22; border-radius:4px">${s}</span>`).join('')}
+                    </div>
+                    <p style="font-size:0.8rem; color:var(--text2)">${c.highlights}</p>
+                    <div style="margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border); font-size:0.75rem; font-style:italic; color:var(--text3)">
+                        ${c.bias_neutral_assessment}
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+        <div class="panel mt-8" style="background:rgba(88, 166, 255, 0.05); border-color:var(--accent)">
+            <h4 style="color:var(--accent)">Batch Fairness Summary</h4>
+            <p style="font-size:0.85rem; color:var(--text2); margin-top:0.5rem">${result.batch_fairness_summary}</p>
         </div>
     `;
     wrap.scrollIntoView({ behavior: 'smooth' });

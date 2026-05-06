@@ -46,7 +46,7 @@ h1 em { font-style: normal; color: var(--accent); }
 .hero-sub { max-width: 600px; margin: 0 auto; color: var(--text2); font-size: 1.1rem; }
 
 /* Grid */
-.audit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 4rem; }
+.audit-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2rem; margin-top: 4rem; }
 
 /* Cards & Steps */
 .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; }

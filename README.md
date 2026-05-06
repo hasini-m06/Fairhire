@@ -5,7 +5,8 @@
 
 FairHire is an AI-powered hiring fairness auditor built for Indian companies. It detects gender, college tier, and geographic bias hidden inside historical hiring data — using Google Gemini to surface the patterns that cause qualified candidates to be rejected before they're ever seen.
 
-🔗 **Live Demo:** [hasini-m06.github.io/Fairhire](https://hasini-m06.github.io/Fairhire/)
+🔗 **Live Demo (Vercel):** [fairhire-virid.vercel.app](https://fairhire-virid.vercel.app/)  
+🔗 **Live Demo (GitHub Pages):** [hasini-m06.github.io/Fairhire](https://hasini-m06.github.io/Fairhire/)
 
 ---
 

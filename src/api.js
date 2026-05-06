@@ -6,7 +6,7 @@
  */
 
 // REPLACE THIS with your actual Vercel deployment URL after the first deploy
-const VERCEL_PROD_URL = 'https://fairhire.vercel.app'; 
+const VERCEL_PROD_URL = 'https://fairhire-virid.vercel.app'; 
 
 export async function runAudit(csvData) {
     try {

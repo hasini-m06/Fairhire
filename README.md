@@ -6,6 +6,7 @@
 FairHire is an enterprise-grade hiring fairness infrastructure built to eliminate systemic bias from the global hiring pipeline. It detects gender, college tier, and geographic bias hidden inside both structured (CSV) and unstructured (PDF) data — using **Google Gemini 1.5 Pro** and **Firebase Data Connect** to ensure every candidate is evaluated strictly on merit.
 
 🔗 **Live Demo (Vercel):** [fairhire-virid.vercel.app](https://fairhire-virid.vercel.app/)  
+🔗 **Live Demo (GitHub Pages):** [hasini-m06.github.io/Fairhire](https://hasini-m06.github.io/Fairhire/)
 
 ---
 

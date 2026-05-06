@@ -2,7 +2,7 @@
 # Using PostgreSQL for Global Fairness Benchmarking
 
 type BenchmarkEntry @table {
-  id: UUID! @default(expr: "uuid_generate_v4()")
+  id: UUID! @default(expr: "uuid()")
   field: String! # gender, college_tier, location
   dirScore: Float! # The calculated DIR (0.0 to 1.0)
   industry: String! @default(value: "Tech")

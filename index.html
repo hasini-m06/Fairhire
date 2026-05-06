@@ -24,118 +24,137 @@
                 <div class="nav-logo-text">Fair<em>Hire</em></div>
             </div>
             <div class="nav-pills">
-                <span class="pill pill--hi">v2.0.0</span>
+                <span class="pill pill--secure">🛡️ Privacy Mode: ON</span>
                 <span class="pill">Gemini 1.5 Pro</span>
-                <span class="pill">SDG 8 & 10</span>
+                <span class="pill">v2.1.0</span>
             </div>
         </div>
     </nav>
 
     <header class="hero">
         <div class="container">
-            <div class="eyebrow">Algorithmic Transparency Engine</div>
-            <h1>The bias auditor for <em>merit-based</em> hiring.</h1>
-            <p class="hero-sub">Upload your hiring historical data to detect hidden patterns of gender, college tier, and geographic bias using Google Gemini and DIR math validation.</p>
-            
-            <div class="hero-stats">
-                <div class="stat">
-                    <span class="stat-n">73%</span>
-                    <span class="stat-l">of Indian recruiters prioritize college tags over skills.</span>
-                </div>
-                <div class="stat-div"></div>
-                <div class="stat">
-                    <span class="stat-n">18%</span>
-                    <span class="stat-l">representation from Tier 3 colleges in elite tech roles.</span>
-                </div>
-            </div>
+            <div class="eyebrow">Privacy-First Fairness Infrastructure</div>
+            <h1>Eliminate bias at the <em>source</em>.</h1>
+            <p class="hero-sub">Audit Job Descriptions for exclusionary language and cross-validate hiring outcomes with client-side anonymized DIR math.</p>
         </div>
     </header>
 
     <main class="main container">
-        <div class="step">
-            <div class="step-num">01</div>
-            <div class="step-content">
-                <h2>Upload Dataset</h2>
-                <p class="step-desc">Select a CSV file containing your recent hiring outcomes (names, gender, college tier, location, years_exp, hired).</p>
-                
-                <div class="upload-zone" id="uploadZone">
-                    <input type="file" id="fileInput" accept=".csv">
-                    <div class="upload-arrow">↑</div>
-                    <div class="upload-main" id="uploadMain">Drop your CSV here or click to browse</div>
-                    <div class="upload-hint" id="uploadHint">Maximum 5MB · .csv format</div>
-                </div>
-                
-                <div class="upload-foot">
-                    <button class="btn-ghost" id="demoBtn">Use Basic Demo</button>
-                    <button class="btn-ghost" id="realisticDemoBtn">Use Realistic Demo</button>
-                    <span class="foot-note" id="dataNote">No data uploaded yet</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="step" id="auditStep">
-            <div class="step-num">02</div>
-            <div class="step-content">
-                <h2>Execute Audit</h2>
-                <p class="step-desc">Run the 3-stage Gemini audit and DIR mathematical cross-validation.</p>
-                <button class="btn-primary" id="analyzeBtn" disabled>Start Deep Audit →</button>
-            </div>
-        </div>
-
-        <section id="results" style="display: none;">
+        <!-- 1. Dual Audit Entry -->
+        <div class="audit-grid">
+            <!-- Historical Data Audit -->
             <div class="step">
+                <div class="step-num">01</div>
+                <div class="step-content">
+                    <h2>Pipeline Audit</h2>
+                    <p class="step-desc">Upload hiring outcomes. Data is <strong>anonymized locally</strong> before AI analysis.</p>
+                    
+                    <div class="upload-zone" id="uploadZone">
+                        <input type="file" id="fileInput" accept=".csv" hidden>
+                        <div class="upload-arrow">↑</div>
+                        <div class="upload-main" id="uploadMain">Drop CSV for anonymized audit</div>
+                        <div class="upload-hint" id="uploadHint">PII is hashed in-browser</div>
+                    </div>
+                    
+                    <div class="upload-foot">
+                        <button class="btn-ghost" id="demoBtn">Basic Demo</button>
+                        <button class="btn-ghost" id="realisticDemoBtn">Realistic Demo</button>
+                    </div>
+                    <button class="btn-primary mt-6" id="analyzeBtn" disabled>Run Data Audit →</button>
+                </div>
+            </div>
+
+            <!-- Job Description Audit -->
+            <div class="step">
+                <div class="step-num">02</div>
+                <div class="step-content">
+                    <h2>JD Bias Audit</h2>
+                    <p class="step-desc">Audit your Job Descriptions for gendered or exclusionary language.</p>
+                    
+                    <div class="jd-entry">
+                        <textarea id="jdInput" placeholder="Paste Job Description here..."></textarea>
+                    </div>
+                    
+                    <button class="btn-secondary mt-6" id="analyzeJDBtn">Audit JD Text →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Results Dashboard -->
+        <section id="results" style="display: none;">
+            <div class="step mt-12">
                 <div class="step-num">03</div>
                 <div class="step-content">
-                    <h2>Audit Report</h2>
-                    <p class="step-desc">Comprehensive analysis of your hiring pipeline's fairness and risk profile.</p>
-
-                    <div id="riskBannerWrap"></div>
-
-                    <div class="tabs" id="tabs">
-                        <button class="tab active" data-tab="findings">Bias Findings</button>
-                        <button class="tab" data-tab="heatmap">Heatmap</button>
-                        <button class="tab" data-tab="validation">DIR Validation</button>
-                        <button class="tab" data-tab="recs">SDG Recommendations</button>
+                    <div class="results-header-bar">
+                        <h2>Audit Intelligence</h2>
+                        <button class="btn-export" id="exportBtn">Export Certified PDF</button>
                     </div>
 
+                    <div class="tabs" id="tabs">
+                        <button class="tab active" data-tab="findings">Findings</button>
+                        <button class="tab" data-tab="heatmap">Heatmap</button>
+                        <button class="tab" data-tab="validation">Validation</button>
+                        <button class="tab" data-tab="simulator">Simulator</button>
+                        <button class="tab" data-tab="recs">Actions</button>
+                    </div>
+
+                    <!-- Findings Pane -->
                     <div id="tab-findings" class="tab-pane">
+                        <div id="riskBannerWrap"></div>
                         <div class="panel" id="findingsList"></div>
                     </div>
 
+                    <!-- Heatmap Pane -->
                     <div id="tab-heatmap" class="tab-pane" style="display: none;">
                         <div class="panel">
-                            <div class="heatmap-note">Hiring Rate % by Gender vs. College Tier</div>
+                            <div class="heatmap-note">Hiring Rate % Matrix</div>
                             <div id="heatmapWrap"></div>
                         </div>
                     </div>
 
+                    <!-- Validation Pane -->
                     <div id="tab-validation" class="tab-pane" style="display: none;">
                         <div class="panel">
-                            <div class="risk-badge-label">AI TRUST SCORE</div>
-                            <div class="risk-badge-val" id="trustScoreVal">0%</div>
-                            <p class="step-desc mt-4">Percentage of AI findings confirmed by mathematical Disparate Impact Ratio (DIR) calculations.</p>
+                            <div class="trust-stat">
+                                <div class="trust-val" id="trustScoreVal">0%</div>
+                                <div class="trust-label">AI TRUST SCORE</div>
+                            </div>
                             <div id="validationList" class="mt-6"></div>
                         </div>
                     </div>
 
+                    <!-- Simulator Pane -->
+                    <div id="tab-simulator" class="tab-pane" style="display: none;">
+                        <div class="panel">
+                            <h3>Bias Impact Simulator</h3>
+                            <p class="step-desc">Adjust hire rates to see how specific group improvements impact your DIR score.</p>
+                            <div id="simulatorControls" class="mt-8"></div>
+                            <div id="simulatorResult" class="mt-6"></div>
+                        </div>
+                    </div>
+
+                    <!-- Recommendations Pane -->
                     <div id="tab-recs" class="tab-pane" style="display: none;">
                         <div class="panel" id="recsList"></div>
                     </div>
+                </div>
+            </div>
+        </section>
 
-                    <div class="export-bar mt-8">
-                        <div>
-                            <div class="export-title">Download Official Report</div>
-                            <div class="export-sub">Portable PDF document with all findings and math validation.</div>
-                        </div>
-                        <button class="btn-export" id="exportBtn">Export Audit PDF</button>
-                    </div>
+        <!-- JD Audit Results -->
+        <section id="jdResults" style="display: none;" class="mt-12">
+             <div class="step">
+                <div class="step-num">AI</div>
+                <div class="step-content">
+                    <h2>Job Description Analysis</h2>
+                    <div id="jdResultContent" class="panel mt-6"></div>
                 </div>
             </div>
         </section>
     </main>
 
-    <footer class="container" style="padding: 4rem 0; border-top: 1px solid var(--border); opacity: 0.5; font-size: 0.75rem; text-align: center;">
-        FairHire Auditor v2.0.0 · Google Solution Challenge 2026 · Built by Team Hashes (BMSIT&M)
+    <footer class="container">
+        FairHire v2.1.0 · Infrastructure-Grade Fairness · Built for Google Solution Challenge 2026
     </footer>
 
     <!-- App Logic -->

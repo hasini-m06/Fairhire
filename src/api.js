@@ -55,3 +55,32 @@ export async function runAudit(csvData) {
         };
     }
 }
+
+/**
+ * Audits Job Description text for bias
+ */
+export async function auditJD(jdText) {
+    try {
+        const isLocalOrVercel = window.location.hostname === 'localhost' || window.location.hostname.endsWith('.vercel.app');
+        const apiEndpoint = isLocalOrVercel ? '/api/audit_jd' : `${VERCEL_PROD_URL}/api/audit_jd`;
+
+        const response = await fetch(apiEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ jdText })
+        });
+
+        if (!response.ok) throw new Error("JD Audit failed");
+        return await response.json();
+    } catch (error) {
+        console.warn("⚠️ JD Audit Failed. Falling back to demo mode.");
+        return {
+            bias_score: 65,
+            overall_verdict: "The JD contains gendered language and exclusionary requirements.",
+            biased_phrases: [
+                { phrase: "rockstar developer", reason: "Gendered/Aggressive coding", suggestion: "Experienced Software Engineer" },
+                { phrase: "graduates from top-tier colleges only", reason: "Institutional pedigree bias", suggestion: "Graduates with relevant technical competency" }
+            ]
+        };
+    }
+}

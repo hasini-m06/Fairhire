@@ -1,13 +1,12 @@
 /**
- * FairHire Validation Engine
+ * FairHire Validation & Privacy Engine
  * 
- * Implements the Disparate Impact Ratio (DIR) math to cross-check AI findings.
- * Based on the EEOC 80% Rule (1978).
+ * Implements DIR math and client-side PII anonymization.
  */
 
 /**
  * Parses CSV text into headers and rows.
- * Handles messy data: missing values, varied casing, and whitespace.
+ * Hardened to handle various delimiters (comma, semicolon, tab).
  */
 export function parseCSV(text) {
     if (!text) return { headers: [], rows: [] };
@@ -15,9 +14,15 @@ export function parseCSV(text) {
     const lines = text.trim().split('\n').filter(l => l.trim());
     if (lines.length === 0) return { headers: [], rows: [] };
     
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    // Detect delimiter
+    const firstLine = lines[0];
+    let delimiter = ',';
+    if (firstLine.includes(';')) delimiter = ';';
+    else if (firstLine.includes('\t')) delimiter = '\t';
+
+    const headers = lines[0].split(delimiter).map(h => h.trim().toLowerCase());
     const rows = lines.slice(1).map(line => {
-        const values = line.split(',').map(v => v.trim());
+        const values = line.split(delimiter).map(v => v.trim());
         const row = {};
         headers.forEach((h, i) => { 
             row[h] = values[i] || ''; 
@@ -28,10 +33,38 @@ export function parseCSV(text) {
 }
 
 /**
+ * Anonymizes rows by hashing PII (Name, Email, etc.)
+ * Ensures the AI never sees real candidate names.
+ */
+export async function anonymizeRows(rows) {
+    const piiFields = ['name', 'email', 'phone', 'address', 'candidate_id'];
+    
+    // Using a simple hash function for browser compatibility without external libs
+    const hash = async (str) => {
+        if (!str) return 'Anonymous';
+        const msgBuffer = new TextEncoder().encode(str);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return 'ID_' + hashArray.map(b => b.toString(16).padStart(2, '0')).join('').substring(0, 8);
+    };
+
+    const anonymized = [];
+    for (const row of rows) {
+        const newRow = { ...row };
+        for (const field of piiFields) {
+            if (newRow[field]) {
+                newRow[field] = await hash(newRow[field]);
+            }
+        }
+        anonymized.push(newRow);
+    }
+    return anonymized;
+}
+
+/**
  * Computes Disparate Impact Ratio for a specific field.
  */
 export function computeDIR(rows, field) {
-    // Normalize field name
     const normalizedField = field.toLowerCase();
     
     const groups = {};
@@ -43,9 +76,8 @@ export function computeDIR(rows, field) {
         if (hired) groups[val].yes++;
     });
 
-    // Filtering out groups with very small sample size to reduce noise
     const valid = Object.entries(groups)
-        .filter(([, g]) => g.total >= 1) // Lowered to 1 to handle messy/small data as per judge feedback
+        .filter(([, g]) => g.total >= 1)
         .map(([name, g]) => ({
             name,
             hireRate: g.yes / g.total,
@@ -55,7 +87,6 @@ export function computeDIR(rows, field) {
 
     if (valid.length < 2) return null;
 
-    // Advantaged group = highest hire rate
     valid.sort((a, b) => b.hireRate - a.hireRate);
     const advantaged = valid[0];
     const disadvantaged = valid[valid.length - 1];
@@ -86,7 +117,6 @@ export function computeDIR(rows, field) {
 
 /**
  * Cross-checks AI findings against DIR math results.
- * Returns a Trust Score (0-100).
  */
 export function computeValidation(rows, aiResult) {
     const fields = ['gender', 'college_tier', 'location'];
@@ -100,8 +130,6 @@ export function computeValidation(rows, aiResult) {
         const aiRiskLevel = aiResult.risk_level || 'UNKNOWN';
         const mathHigh = dir.riskLevel === 'HIGH';
         const aiHigh = aiRiskLevel === 'HIGH' || aiRiskLevel === 'CRITICAL';
-        
-        // A match occurs if both agree on risk or both agree on safety
         const match = (mathHigh === aiHigh) ||
                       (dir.riskLevel === 'MEDIUM' && aiRiskLevel !== 'LOW') ||
                       (dir.riskLevel === 'LOW' && aiRiskLevel === 'LOW');
@@ -112,11 +140,5 @@ export function computeValidation(rows, aiResult) {
     const matchCount = comparisons.filter(c => c.match).length;
     const trustScore = Math.round((matchCount / comparisons.length) * 100);
 
-    return { 
-        dirResults, 
-        comparisons, 
-        trustScore, 
-        matchCount, 
-        total: comparisons.length 
-    };
+    return { dirResults, comparisons, trustScore, matchCount, total: comparisons.length };
 }

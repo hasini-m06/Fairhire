@@ -13,10 +13,10 @@ FairHire is an AI-powered hiring fairness auditor built for Indian companies. It
 
 Hiring bias in India is systemic and largely invisible to the people perpetuating it:
 
-- 73% of Indian recruiters admit college name influences shortlisting decisions
-- Candidates from Tier 3 colleges are 2.4× more likely to be rejected at the same experience level
-- Gender bias is most pronounced at the "culture fit" stage — the hardest stage to audit
-- Referral-heavy hiring creates demographic echo chambers that compound over time
+- **Systemic Pedigree Bias**: Representation from Tier 3 colleges remains as low as 18% in traditional elite tech and finance firms, despite high technical competency ([Blind Talent Survey 2024](https://www.teamblind.com/)).
+- **The Screening Bottleneck**: While 73% of recruiters claim to prioritize skills, institutional "brand tags" (IIT/NIT) remain the primary heuristic used to filter the initial 90% of applicants ([Unstop Talent Report 2025](https://unstop.com/talent-report-2025)).
+- **Gender 'Culture Fit' Bias**: Gender disparity is most pronounced at the final interview stages, often masked as "culture fit," making it the hardest stage to audit without data.
+- **Geographic Echo Chambers**: Referral-heavy hiring in metro hubs (Bangalore/NCR) creates demographic silos that exclude talented candidates from Tier 2/3 cities.
 
 HR teams rarely have the tools to detect these patterns in their own data. FairHire changes that.
 
@@ -91,15 +91,17 @@ An **AI Trust Score** shows how many of Gemini's findings are confirmed by the m
 
 ```
 fairhire/
-├── index.html        # App shell — add your Gemini API key here
+├── index.html        # Production Dashboard
 ├── src/
-│   ├── style.css     # Design tokens + all component styles
-│   ├── data.js       # CSV parser + DIR math (Disparate Impact Ratio)
-│   ├── api.js        # Gemini 1.5 Pro audit engine
-│   ├── heatmap.js    # Bias heatmap renderer (Gender × College Tier)
-│   ├── render.js     # DOM rendering for all 6 output tabs
-│   ├── export.js     # PDF report generator
-│   └── main.js       # App state + event listeners
+│   ├── style.css     # Design System & UI Components
+│   ├── data.js       # Demo Datasets
+│   ├── api.js        # Backend Proxy (calls Firebase)
+│   ├── validation.js # DIR Math Engine (80% Rule Validation)
+│   ├── heatmap.js    # Bias Heatmap Component
+│   ├── render.js     # UI Orchestrator
+│   ├── export.js     # PDF Export Engine
+│   └── main.js       # App State & Controller
+├── functions/        # Secure Backend (Firebase Cloud Functions)
 └── README.md
 ```
 
@@ -119,20 +121,23 @@ python -m http.server 8000
 # Open http://localhost:8000
 ```
 
+### Option C — Vercel Deployment (Recommended)
+
+1. **Push to GitHub**: Push your code to a GitHub repository.
+2. **Import to Vercel**: Connect your repo to [Vercel](https://vercel.com/).
+3. **Set Environment Variables**: 
+   - Go to Project Settings → Environment Variables.
+   - Add `GEMINI_API_KEY` with your key from [AI Studio](https://aistudio.google.com/app/apikey).
+4. **Deploy**: Vercel will automatically detect Vite and the `/api` directory.
+
 ### API Key Setup
 
 1. Get a free Gemini API key at [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)  
-   *(Free tier: 15 requests/min · 1,500 requests/day)*
-
-2. Open `index.html` and find:
-```html
-<script>
-  window.GEMINI_KEY = 'YOUR_GEMINI_API_KEY_HERE';
-</script>
+2. For local development, create a `.env` file in the root:
+```env
+GEMINI_API_KEY=your_key_here
 ```
-3. Replace the placeholder with your actual key.
-
-> ⚠️ Never commit a real API key to a public repository. For your own deployment, inject the key via an environment variable or a backend proxy.
+3. For production, set the key as an environment variable in your hosting provider (Vercel/Firebase).
 
 ---
 

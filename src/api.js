@@ -1,99 +1,55 @@
-const GEMINI_MODEL = 'gemini-flash-latest'; // Switch to Flash latest for 100% compatibility
-const GEMINI_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+/**
+ * FairHire API Interface
+ * 
+ * Handles communication with the backend Gemini Auditor.
+ * Securely processes data via Serverless Functions to protect API keys.
+ */
 
-function getApiKey() {
-    let key = "";
-    try {
-        // This will be replaced by Vite during build, but might throw a TypeError on raw GitHub Pages
-        if (import.meta && import.meta.env && import.meta.env.VITE_GEMINI_KEY) {
-            key = import.meta.env.VITE_GEMINI_KEY;
-        }
-    } catch (e) {
-        // Fallback for static environments without Vite
-    }
-    return key || window.GEMINI_KEY || ""; 
-}
-
-function buildAuditPrompt(csvData) {
-    return `Audit this hiring dataset for bias. Return ONLY JSON.
-    DATA: ${csvData}
-    FORMAT: {
-      "risk_level": "HIGH | MEDIUM | LOW",
-      "risk_summary": "Short verdict on fairness",
-      "findings": [
-        {
-          "title": "Finding name",
-          "detail": "Data-backed observation",
-          "severity": "HIGH | MEDIUM | LOW"
-        }
-      ]
-    }`;
-}
+// REPLACE THIS with your actual Vercel deployment URL after the first deploy
+const VERCEL_PROD_URL = 'https://fairhire.vercel.app'; 
 
 export async function runAudit(csvData) {
     try {
-        const apiKey = getApiKey();
-        if (!apiKey) throw new Error("MISSING_KEY: Check index.html");
+        // Detect environment: use relative path if on Vercel, else use absolute URL
+        const isLocalOrVercel = window.location.hostname === 'localhost' || window.location.hostname.endsWith('.vercel.app');
+        const apiEndpoint = isLocalOrVercel ? '/api/audit' : `${VERCEL_PROD_URL}/api/audit`;
 
-        const url = `${GEMINI_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
-
-        const response = await fetch(url, {
+        const response = await fetch(apiEndpoint, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: buildAuditPrompt(csvData) }] }],
-                generationConfig: { 
-                    temperature: 0.1, 
-                    responseMimeType: "application/json" 
-                }
-            })
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ csvData })
         });
 
         if (!response.ok) {
             const errData = await response.json();
-            console.error("API ERROR:", errData);
-            const errorMsg = errData?.error?.message || `API_ERROR: ${response.status}`;
-            throw new Error(errorMsg);
+            throw new Error(errData.error || `API Error: ${response.status}`);
         }
 
         const result = await response.json();
-        const rawText = result.candidates[0]?.content?.parts[0]?.text;
-        
-        if (!rawText) {
-            throw new Error("Invalid API Response format");
-        }
-        
-        const cleanJson = rawText.replace(/```json|```/gi, "").trim();
-        let parsedData = JSON.parse(cleanJson);
-
-        if (!Array.isArray(parsedData.findings)) {
-            parsedData.findings = [];
-        }
-        
-        return parsedData;
+        return result;
 
     } catch (error) {
-        console.warn("⚠️ API Failed (" + error.message + "). Falling back to Demo Mode for video recording.");
+        console.warn("⚠️ Backend Audit Failed. Falling back to localized math-validation mode.");
+        console.error(error);
         
-        // DEMO FALLBACK: Guaranteed to work for the video recording
+        // Fallback: This allows the app to still function for the demo on GitHub Pages
         return {
-            "risk_level": "HIGH",
-            "risk_summary": "The dataset exhibits extreme gender-based discrimination, with a 100% hiring rate for male candidates and a 0% hiring rate for female candidates, regardless of qualifications or experience.",
+            "risk_level": "OFFLINE",
+            "risk_summary": "AI analysis is currently unavailable in static mode. Displaying mathematical DIR validation results only.",
             "findings": [
                 {
-                    "title": "Absolute Gender Disparity",
-                    "detail": "Out of 18 candidates, all 8 males (100%) were hired, while all 10 females (0%) were rejected, indicating a total correlation between gender and hiring outcome.",
-                    "severity": "HIGH"
-                },
+                    "title": "Backend Connectivity",
+                    "detail": "The AI Auditor requires a serverless backend. To enable AI, deploy to Vercel or configure CORS for your Vercel URL.",
+                    "severity": "MEDIUM"
+                }
+            ],
+            "recommendations": [
                 {
-                    "title": "Experience Paradox",
-                    "detail": "Female candidates have significantly higher average years of experience (approx. 5.0 years) compared to male candidates (approx. 3.0 years), yet none were hired. Notably, a female with 8 years of experience was rejected while a male with 1 year was hired.",
-                    "severity": "HIGH"
-                },
-                {
-                    "title": "Educational Bias",
-                    "detail": "Male candidates from Tier 3 colleges were hired, whereas female candidates from Tier 1 colleges were all rejected.",
-                    "severity": "HIGH"
+                    "title": "Enable AI Mode",
+                    "sdg": "SDG 8",
+                    "description": "Deploy this repository to Vercel and set the VERCEL_PROD_URL in src/api.js to enable the full Gemini 1.5 Pro audit."
                 }
             ]
         };

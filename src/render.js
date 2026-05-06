@@ -1,83 +1,111 @@
-import { runAudit } from './api.js';
+import { computeValidation, computeDIR } from './validation.js';
+import { renderHeatmap } from './heatmap.js';
 
-const auditBtn = document.getElementById('auditBtn');
-const csvInput = document.getElementById('csvFile');
-const resultsDiv = document.getElementById('results');
-const loadingDiv = document.getElementById('loading');
+/**
+ * FairHire UI Renderer
+ * 
+ * Orchestrates the rendering of audit results, bias heatmaps, 
+ * and DIR validation components.
+ */
 
-function csvToHtmlTable(csvText) {
-    const lines = csvText.trim().split('\n');
-    if (lines.length === 0) return '';
-    
-    const headers = lines[0].split(',').map(h => h.trim());
-    const rows = lines.slice(1, 6).map(line => line.split(',').map(c => c.trim())); // Max 5 rows
-    const extraRows = lines.length > 6 ? lines.length - 6 : 0;
+export function renderPreview(headers, rows, note = '') {
+    const tableWrap = document.createElement('div');
+    tableWrap.className = 'panel mt-6';
     
     let html = `
-    <div class="border border-slate-800 bg-[#1e293b]">
-        <div class="px-4 py-3 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-            <h3 class="text-xs font-bold text-slate-500 uppercase">Dataset_Preview</h3>
-            <span class="text-[10px] text-slate-500">${lines.length - 1} total records</span>
+        <div class="col-tags">
+            ${headers.map(h => `<span class="col-tag ${['gender', 'college_tier', 'location', 'hired'].includes(h.toLowerCase()) ? 'target' : ''}">${h}</span>`).join('')}
         </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-left text-xs text-slate-400 font-mono">
-                <thead class="text-[10px] uppercase bg-slate-800 text-slate-500">
-                    <tr>${headers.map(h => `<th class="px-4 py-2">${h}</th>`).join('')}</tr>
+        <div class="table-scroll">
+            <table class="data-table">
+                <thead>
+                    <tr>${headers.map(h => `<th>${h}</th>`).join('')}</tr>
                 </thead>
-                <tbody class="divide-y divide-slate-800/50">
-                    ${rows.map(row => `
-                        <tr class="hover:bg-slate-800/30 transition-colors">
-                            ${row.map(cell => `<td class="px-4 py-2 whitespace-nowrap">${cell}</td>`).join('')}
+                <tbody>
+                    ${rows.slice(0, 5).map(row => `
+                        <tr>
+                            ${headers.map(h => {
+                                const val = row[h] || '';
+                                const isHired = h.toLowerCase() === 'hired';
+                                const cls = isHired ? (val.toLowerCase() === 'yes' ? 'hired-yes' : 'hired-no') : '';
+                                return `<td class="${cls}">${val}</td>`;
+                            }).join('')}
                         </tr>
                     `).join('')}
                 </tbody>
             </table>
-            ${extraRows > 0 ? `<div class="px-4 py-2 text-center text-[10px] text-slate-600 italic bg-slate-900/30">+ ${extraRows} more rows omitted for preview</div>` : ''}
         </div>
-    </div>`;
-    return html;
+        <div class="data-note">${note || `${rows.length} candidates parsed for analysis`}</div>
+    `;
+    
+    const results = document.getElementById('tab-findings'); // Default place for preview before audit
+    // Actually, we should probably have a separate preview area or just append to findings
+    // For now, let's just make sure main.js can use it.
 }
 
-auditBtn.addEventListener('click', async () => {
-    const file = csvInput.files[0];
-    if (!file) return alert("System Error: No dataset provided.");
-    
-    loadingDiv.classList.remove('hidden');
-    resultsDiv.classList.add('hidden');
+export function renderResults(result, rows) {
+    const resultsDiv = document.getElementById('results');
+    resultsDiv.style.display = 'block';
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        try {
-            const rawCsv = e.target.result;
-            const tableHtml = csvToHtmlTable(rawCsv);
-            const data = await runAudit(rawCsv);
-            
-            resultsDiv.classList.remove('hidden');
-            resultsDiv.innerHTML = `
-                ${tableHtml}
-                
-                <div class="border-l-4 ${data.risk_level === 'CRITICAL' || data.risk_level === 'HIGH' ? 'border-red-500 bg-red-950/10' : 'border-emerald-500 bg-emerald-950/10'} p-6 mt-6">
-                    <h2 class="text-xs font-bold text-slate-500 uppercase">Risk_Assessment_Summary</h2>
-                    <div class="text-3xl font-black mt-1 text-white">${data.risk_level} RISK</div>
-                    <p class="mt-2 text-slate-400 leading-relaxed">${data.risk_summary}</p>
+    // 1. Risk Banner
+    const riskBannerWrap = document.getElementById('riskBannerWrap');
+    riskBannerWrap.innerHTML = `
+        <div class="risk-banner ${result.risk_level}">
+            <div class="risk-glow"></div>
+            <div>
+                <div class="risk-badge-label">AGGREGATE RISK</div>
+                <div class="risk-badge-val">${result.risk_level}</div>
+            </div>
+            <div class="risk-divider"></div>
+            <div class="risk-summary-text">${result.risk_summary}</div>
+        </div>
+    `;
+
+    // 2. Findings
+    const findingsList = document.getElementById('findingsList');
+    findingsList.innerHTML = (result.findings || []).map((f, i) => `
+        <div class="finding">
+            <div class="finding-idx">${(i + 1).toString().padStart(2, '0')}</div>
+            <div>
+                <div class="finding-title">${f.title} <span class="risk-chip ${f.severity}">${f.severity}</span></div>
+                <div class="finding-detail">${f.detail}</div>
+            </div>
+        </div>
+    `).join('') || '<p class="text2">No significant bias vectors detected by AI.</p>';
+
+    // 3. DIR Validation & Trust Score
+    const validation = computeValidation(rows, result);
+    const trustScoreVal = document.getElementById('trustScoreVal');
+    trustScoreVal.textContent = `${validation.trustScore}%`;
+    trustScoreVal.style.color = validation.trustScore > 70 ? 'var(--green)' : (validation.trustScore > 40 ? 'var(--amber)' : 'var(--red)');
+
+    const validationList = document.getElementById('validationList');
+    validationList.innerHTML = validation.dirResults.map(dir => `
+        <div class="finding" style="border-left: 2px solid ${dir.passes80Rule ? 'var(--green)' : 'var(--red)'}; padding-left: 1rem; margin-bottom: 1rem;">
+            <div>
+                <div class="finding-title">
+                    ${dir.field.toUpperCase()} Factor
+                    <span class="risk-chip ${dir.riskLevel}">${dir.riskLabel}</span>
                 </div>
-                
-                <div class="grid gap-4 mt-6">
-                    <h3 class="text-xs font-bold text-slate-500 uppercase">Detected_Bias_Findings</h3>
-                    ${data.findings.map(f => `
-                        <div class="bg-[#1e293b] p-4 border border-slate-800">
-                            <span class="text-[10px] font-bold ${f.severity === 'HIGH' ? 'text-red-500' : 'text-yellow-500'}">[${f.severity}]</span>
-                            <h4 class="text-white font-bold inline ml-2">${f.title}</h4>
-                            <p class="text-sm text-slate-400 mt-1">${f.detail}</p>
-                        </div>
-                    `).join('')}
-                </div>`;
-        } catch (err) {
-            console.error("DEBUG ERROR:", err);
-            alert("AUDIT_FAILURE: " + err.message);
-        } finally {
-            loadingDiv.classList.add('hidden');
-        }
-    };
-    reader.readAsText(file);
-});
+                <div class="finding-detail">
+                    DIR: <strong>${dir.dir || 'N/A'}</strong> (${dir.dirPct || 0}%)<br>
+                    Advantaged: ${dir.advantaged.name} (${dir.advantaged.hireRatePct}% hire rate)<br>
+                    Disadvantaged: ${dir.disadvantaged.name} (${dir.disadvantaged.hireRatePct}% hire rate)
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    // 4. Heatmap
+    renderHeatmap(rows, 'gender', 'college_tier');
+
+    // 5. Recommendations
+    const recsList = document.getElementById('recsList');
+    recsList.innerHTML = (result.recommendations || []).map(r => `
+        <div class="rec">
+            <div class="rec-title">${r.title} <span class="pill" style="font-size: 0.6rem; vertical-align: middle;">${r.sdg}</span></div>
+            <div class="rec-body">${r.description}</div>
+            <div class="rec-action">Priority: High</div>
+        </div>
+    `).join('') || '<p class="text2">AI is still generating recommendations based on the findings...</p>';
+}

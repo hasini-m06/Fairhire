@@ -11,16 +11,15 @@ Thumbs.db
 firebase-debug.log
 .firebaserc
 
-# Secrets — NEVER commit API keys
-.env
-.env.local
-*.env.local
-
 # Dependencies
 node_modules/
+functions/node_modules/
 
 # Build output
 dist/
 
-# Functions (removed — no longer used)
-functions/node_modules/
+# Secrets
+.env
+.env.local
+*.env.local
+.gemini/

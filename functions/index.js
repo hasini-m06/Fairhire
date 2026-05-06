@@ -2,10 +2,9 @@ const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { defineSecret } = require("firebase-functions/params");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-// 1. Tell Firebase we are using this secret
+// Define secret for the API Key
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
 
-// 2. Bind the secret to the function
 exports.runAudit = onCall({ 
     cors: true, 
     secrets: [geminiApiKey] 
@@ -16,21 +15,51 @@ exports.runAudit = onCall({
             throw new HttpsError("invalid-argument", "CSV data is required.");
         }
 
-        // 3. Initialize Gemini using the securely injected value
+        // Initialize Gemini 1.5 Pro (as per README commitment)
         const genAI = new GoogleGenerativeAI(geminiApiKey.value());
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-1.5-pro",
+            generationConfig: {
+                temperature: 0.1,
+                responseMimeType: "application/json"
+            }
+        });
         
         const prompt = `
-        Analyze this hiring data for gender, location, and college tier bias. 
-        Provide the output strictly in JSON format with keys: 'findings', 'recommendations'.
-        Data: ${csvData}
+        Audit this hiring dataset for bias. Focus on Gender, College Tier, and Location patterns.
+        
+        DATA:
+        ${csvData}
+        
+        RETURN ONLY JSON in this format:
+        {
+          "risk_level": "HIGH | MEDIUM | LOW",
+          "risk_summary": "One sentence verdict on fairness",
+          "findings": [
+            {
+              "title": "Finding name",
+              "detail": "Data-backed observation",
+              "severity": "HIGH | MEDIUM | LOW"
+            }
+          ],
+          "recommendations": [
+            {
+              "title": "Action item",
+              "sdg": "SDG 8 or SDG 10",
+              "description": "Concrete step for HR"
+            }
+          ]
+        }
         `;
         
         const result = await model.generateContent(prompt);
-        return { result: result.response.text() };
+        const responseText = result.response.text();
+        
+        // Ensure we return a clean JSON object
+        return JSON.parse(responseText.replace(/```json|```/gi, "").trim());
         
     } catch (error) {
         console.error("AI Audit Error:", error);
-        throw new HttpsError("internal", "Failed to process audit.");
+        throw new HttpsError("internal", "Audit failed: " + error.message);
     }
 });
